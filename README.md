@@ -77,11 +77,7 @@ _NOTE:_ Files will be dot-sources so any code outside of function declarations w
 The default output is a single result per file.
 
 
-```powershell
-$results = Invoke-Testing -Path .\tests\manualtests.ps1, .\tests\happypath.ps1 -Passthru
-FAIL    .\tests\manualtests.ps1 0.10s
-ok      .\tests\happypath.ps1   0.05s
-```
+![output](/img/outputexample.png)
 
 
 The `-Passthru` switch sends `Testing` objects to the pipeline.
