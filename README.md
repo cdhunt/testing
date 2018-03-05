@@ -66,7 +66,7 @@ $t.Like("{0} {1} is nice", $actual, @($FirstName, $LastName))
 
 ## Invoking
 
-`Invoke-Testing [-Path] <string[]> [-Passthru] `
+`Invoke-Testing [-Path] <string[]> [-Exit] [-Passthru]`
 
 Pass in one or more file paths to PS1 files that contain functions that meet the above mentioned test syntax.
 
