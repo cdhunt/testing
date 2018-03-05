@@ -49,9 +49,9 @@ _example_
 ```powershell
 $actual = 1 * 2
 $t.Equal(2, $actual)
-``
-
+```
 ### Like
+
 Parameters: [string]Expected, [string]Actual, [array]Values
 
 Test `$actual -like $expected`
