@@ -92,25 +92,25 @@ There's a lot of room for improvement in this representation.
 ```powershell
 $results.Results
 
- Pass             Result
- ----             ------
- True                  1
-False
- True                  2
-False
- True    Bob Man is nice
- True   10 digit is nice
- True False True is nice
- True            is nice
-False
- True    Bob Man is mean
- True                  1
- True                  2
- True    Bob Man is nice
- True   10 digit is nice
- True False True is nice
- True            is nice
- True    Bob Man is mean
+ Pass                                                                  Result
+ ----                                                                  ------
+ True                                                                       1
+False                                      Expected int '1', but got int '2'.
+ True                                                                       2
+False                               Expected int '1', but got string 'three'.
+ True                                                         Bob Man is nice
+ True                                                        10 digit is nice
+ True                                                      False True is nice
+ True                                                                 is nice
+False Expected the string 'Bob Man is mean' to match '*nice*' but it did not.
+ True                                                         Bob Man is mean
+ True                                                                       1
+ True                                                                       2
+ True                                                         Bob Man is nice
+ True                                                        10 digit is nice
+ True                                                      False True is nice
+ True                                                                 is nice
+ True                                                         Bob Man is mean
  ```
 
  The `-Throw` parameter will Throw an exception if any tests fail.

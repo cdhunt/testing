@@ -4,11 +4,12 @@ $TestResults | Add-Member -Name Equal -MemberType ScriptMethod -Value {
 
     $pass = $false
     try {
-        $result = Assert-Equal -Expected $expected -Actual $actual
+        $null = Assert-Equal -Expected $expected -Actual $actual -ErrorAction Stop
+        $result = $actual
         $pass = $true
     }
     catch {
-        $result = $Error[0].Exception.Message
+        $result = $_.Exception.Message
     }
 
     $this.Results += [PSCustomObject]@{Pass=$pass; Result=$result}
@@ -22,12 +23,12 @@ $TestResults | Add-Member -Name Like -MemberType ScriptMethod -Value {
 
     $pass = $false
     try {
-        Assert-Like -Expected $expected -Actual $actual
+        $null = Assert-Like -Expected $expected -Actual $actual
         $result = $actual
         $pass = $true
     }
     catch {
-        $result = $Error[0].Exception.Message
+        $result = $_.Exception.Message
     }
 
     $this.Results += [PSCustomObject]@{Pass=$pass; Result=$result}
