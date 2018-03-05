@@ -31,6 +31,8 @@ function Invoke-Testing {
 
     begin {
         $failCount = 0
+        $red = "" + [char]0x001b + "[31m"
+        $green = "" + [char]0x001b + "[32m"
     }
 
     process {
@@ -56,10 +58,10 @@ function Invoke-Testing {
 
             $ok = if ($TestResults.Results.pass -contains $false) {
                 $failCount += ($TestResults.Results.pass -contains $false).Count
-                "FAIL"
+                $red + "FAIL"
 
             } else {
-                "ok"
+                $green + "ok"
             }
 
             "{0}`t{1}`t{2:n2}s" -f $ok, $testFile, $stopwatch.TotalSeconds | Write-Host
