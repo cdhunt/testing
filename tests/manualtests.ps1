@@ -33,3 +33,24 @@ function Test-Strings ([PSTypeName('Testing')]$t)
     $t.Like("*nice*", "Bob Man is mean")
     $t.Like("*mean*", "Bob Man is mean")
 }
+
+function Test-Collections ([PSTypeName('Testing')]$t)
+{
+
+    $t.Contain(20, @(1..10))
+
+}
+
+<# Mocking doesn't work yet
+function Test-StringsWithMock ([PSTypeName('Testing')]$t)
+{
+    . $PSScriptRoot\testsut.ps1
+
+    Mock Get-TestString -MockWith {"Mocked"}
+
+    $actual = Get-TestString Bob Man
+
+    $t.Like("*mocked*", $actual)
+
+}
+#>

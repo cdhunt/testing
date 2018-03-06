@@ -30,3 +30,10 @@ function Test-Strings ([PSTypeName('Testing')]$t)
 
     $t.Like("*mean*", "Bob Man is mean")
 }
+
+function Test-Collections ([PSTypeName('Testing')]$t)
+{
+
+    $t.Contain(2, @(1..10))
+
+}
