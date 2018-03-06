@@ -1,39 +1,19 @@
 $TestResults = [pscustomobject]@{PSTypeName='Testing';File=[string]::Empty;Results=@()}
 
 $TestResults | Add-Member -Name Equal -MemberType ScriptMethod -Value {
-    param($expected, $actual)
+    param($Expected, $Actual)
 
-    $pass = $false
-    try {
-        $null = Assert-Equal -Expected $expected -Actual $actual -ErrorAction Stop
-        $result = $actual
-        $pass = $true
-    }
-    catch {
-        $result = $_.Exception.Message
-    }
-
-    $this.Results += [PSCustomObject]@{Pass=$pass; Result=$result}
+    Invoke-Assertion Equal $Expected $Actual
 }
 
 $TestResults | Add-Member -Name Like -MemberType ScriptMethod -Value {
-    param([string]$expected, [string]$actual, [string[]]$value = $null)
+    param([string]$Expected, [string]$Actual, [string[]]$Value = $null)
 
-    if (-not $null -eq $value) {
-        $expected = $expected -f $value
+    if (-not $null -eq $Value) {
+        $Expected = $Expected -f $Value
     }
 
-    $pass = $false
-    try {
-        $null = Assert-Like -Expected $expected -Actual $actual -ErrorAction Stop
-        $result = $actual
-        $pass = $true
-    }
-    catch {
-        $result = $_.Exception.Message
-    }
-
-    $this.Results += [PSCustomObject]@{Pass=$pass; Result=$result}
+    Invoke-Assertion Like $Expected $Actual
 }
 
 $TestResults | Add-Member -Name Contain -MemberType ScriptMethod -Value {
