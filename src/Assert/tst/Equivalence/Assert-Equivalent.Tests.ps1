@@ -1,0 +1,401 @@
+Add-Type -TypeDefinition 'namespace Assertions.TestType { public class Person { public string Name {get;set;} public int Age {get;set;}}}'
+InModuleScope -ModuleName Assert {
+    Describe "Test-Same" {
+        It "Given the same instance of a reference type it returns `$true" -TestCases @(
+            @{ Value = $null },
+            @{ Value = @() },
+            @{ Value = [Type] },
+            @{ Value = (New-Object -TypeName Diagnostics.Process) }
+        ) {
+            param($Value)
+            Test-Same -Expected $Value -Actual $Value | Verify-True
+
+        }
+
+        It "Given different instances of a reference type it returns `$false" -TestCases @(
+            @{ Actual = @(); Expected = @() },
+            @{ Actual = (New-Object -TypeName Diagnostics.Process) ; Expected = (New-Object -TypeName Diagnostics.Process) }
+        ) {
+            param($Expected, $Actual)
+            Test-Same -Expected $Expected -Actual $Actual | Verify-False
+        }
+    }
+
+
+    function Get-TestCase ($Value) {
+        #let's see if this is useful, it's nice for values, but sucks for 
+        #types that serialize to just the type name (most of them)
+        if ($null -ne $Value)
+        {
+            @{
+                Value = $Value
+                Type = $Value.GetType()
+            }
+        }
+        else 
+        {
+            @{
+                Value = $null
+                Type = '<none>'
+            }
+        }
+    }
+
+    Describe "Get-TestCase" {
+        It "Given a value it returns the value and its type in a hashtable" {
+            $expected = @{
+                Value = 1
+                Type = [Int]
+            }
+
+            $actual = Get-TestCase -Value $expected.Value
+
+            $actual.GetType().Name | Verify-Equal 'hashtable'
+            $actual.Value | Verify-Equal $expected.Value
+            $actual.Type | Verify-Equal $expected.Type
+        }
+
+        It "Given `$null it returns <none> as the name of the type" {
+            $expected = @{
+                Value = $null
+                Type = 'none'
+            }
+
+            $actual = Get-TestCase -Value $expected.Value
+
+            $actual.GetType().Name | Verify-Equal 'hashtable'
+            $actual.Value | Verify-Null
+            $actual.Type | Verify-Equal '<none>'
+        }
+    }
+
+    Describe "Get-ValueNotEquivalentMessage" {
+        It "Returns correct message when comparing value to an object" { 
+            $e = 'abc'
+            $a = New-PSObject @{ Name = 'Jakub'; Age = 28 }
+            Get-ValueNotEquivalentMessage -Actual $a -Expected $e | 
+                Verify-Equal "Expected 'abc' to be equivalent to the actual value, but got 'PSObject{Age=28; Name=Jakub}'."
+        }
+
+        It "Returns correct message when comparing object to a value" { 
+            $e = New-PSObject @{ Name = 'Jakub'; Age = 28 }
+            $a = 'abc'
+            Get-ValueNotEquivalentMessage -Actual $a -Expected $e | 
+                Verify-Equal "Expected 'PSObject{Age=28; Name=Jakub}' to be equivalent to the actual value, but got 'abc'."
+        }
+
+        It "Returns correct message when comparing value to an array" { 
+            $e = 'abc'
+            $a = 1,2,3
+            Get-ValueNotEquivalentMessage -Actual $a -Expected $e | 
+                Verify-Equal "Expected 'abc' to be equivalent to the actual value, but got '1, 2, 3'."
+        }
+
+        It "Returns correct message when comparing value to null" { 
+            $e = 'abc'
+            $a = $null
+            Get-ValueNotEquivalentMessage -Actual $a -Expected $e | 
+                Verify-Equal "Expected 'abc' to be equivalent to the actual value, but got '`$null'."
+        }
+
+        It "Returns correct message for given property" { 
+            $e = 1
+            $a = 2
+            Get-ValueNotEquivalentMessage -Actual 1 -Expected 2 -Property ".Age" | 
+                Verify-Equal "Expected property .Age with value '2' to be equivalent to the actual value, but got '1'."
+        }
+    }
+
+    Describe "Is-CollectionSize" {
+        It "Given two collections '<expected>' '<actual>' of the same size it returns `$true" -TestCases @(
+            @{ Actual = (1,2,3); Expected = (1,2,3)},
+            @{ Actual = (1,2,3); Expected = (3,2,1)}
+        ) {
+            param ($Actual, $Expected)
+            Is-CollectionSize -Actual $Actual -Expected $Expected | Verify-True
+        }
+
+        It "Given two collections '<expected>' '<actual>' of different sizes it returns `$false" -TestCases @(
+            @{ Actual = (1,2,3); Expected = (1,2,3,4)},
+            @{ Actual = (1,2,3); Expected = (1,2)}
+            @{ Actual = (1,2,3); Expected = @()}
+        ) {
+            param ($Actual, $Expected)
+            Is-CollectionSize -Actual $Actual -Expected $Expected | Verify-False
+        }
+    }
+
+    Describe "Get-CollectionSizeNotTheSameMessage" {
+        It "Given two collections of differrent sizes it returns the correct message" {
+            Get-CollectionSizeNotTheSameMessage -Expected (1,2,3) -Actual (1,2) | Verify-Equal "Expected collection '1, 2, 3' with length '3' to be the same size as the actual collection, but got '1, 2' with length '2'."
+        }
+    }
+
+    Describe "Compare-ValueEquivalent" { 
+        It "Given expected that is not a value it throws ArgumentException" {
+            $err = { Compare-ValueEquivalent -Actual "dummy" -Expected (Get-Process idle) } | Verify-Throw 
+            $err.Exception -is [ArgumentException] | Verify-True
+        }
+
+        It "Given values '<expected>' and '<actual>' that are not equivalent it returns message '<message>'." -TestCases @(
+            @{ Actual = $null; Expected = 1; Message = "Expected '1' to be equivalent to the actual value, but got '`$null'." },
+            @{ Actual = $null; Expected = ""; Message = "Expected '' to be equivalent to the actual value, but got '`$null'." },
+            @{ Actual = $true; Expected = $false; Message = "Expected '`$false' to be equivalent to the actual value, but got '`$true'." },
+            @{ Actual = $true; Expected = 'False'; Message = "Expected '`$false' to be equivalent to the actual value, but got '`$true'." },
+            @{ Actual = 1; Expected = -1; Message = "Expected '-1' to be equivalent to the actual value, but got '1'." },
+            @{ Actual = "1"; Expected = 1.01; Message = "Expected '1.01' to be equivalent to the actual value, but got '1'." },
+            @{ Actual = "abc"; Expected = "a b c"; Message = "Expected 'a b c' to be equivalent to the actual value, but got 'abc'." },
+            @{ Actual = @("abc", "bde"); Expected = "abc"; Message = "Expected 'abc' to be equivalent to the actual value, but got 'abc, bde'." },
+            @{ Actual = {def}; Expected = "abc"; Message = "Expected 'abc' to be equivalent to the actual value, but got '{def}'." },
+            @{ Actual = (New-PSObject @{ Name = 'Jakub' }); Expected = "abc"; Message = "Expected 'abc' to be equivalent to the actual value, but got 'PSObject{Name=Jakub}'." },
+            @{ Actual = (1,2,3); Expected = "abc"; Message = "Expected 'abc' to be equivalent to the actual value, but got '1, 2, 3'." }
+        ) {
+            param($Actual, $Expected, $Message)
+            Compare-ValueEquivalent -Actual $Actual -Expected $Expected | Verify-Equal $Message
+        }
+    }
+
+    Describe "Compare-CollectionEquivalent" {
+        It "Given expected that is not a collection it throws ArgumentException" {
+            $err = { Compare-CollectionEquivalent -Actual "dummy" -Expected 1 } | Verify-Throw 
+            $err.Exception -is [ArgumentException] | Verify-True
+        }
+
+        It "Given two collections '<expected>' '<actual>' of different sizes it returns message '<message>'" -TestCases @(
+            @{ Actual = (1,2,3); Expected = (1,2,3,4); Message = "Expected collection '1, 2, 3, 4' with length '4' to be the same size as the actual collection, but got '1, 2, 3' with length '3'."},
+            @{ Actual = (1,2,3); Expected = (3,1); Message = "Expected collection '3, 1' with length '2' to be the same size as the actual collection, but got '1, 2, 3' with length '3'." }
+        ) {
+            param ($Actual, $Expected, $Message)
+            Compare-CollectionEquivalent -Actual $Actual -Expected $Expected | Verify-Equal $Message
+        }
+
+        It "Given collection '<expected>' on the expected side and non-collection '<actual>' on the actual side it prints the correct message '<message>'" -TestCases @(
+            @{ Actual = 3; Expected = (1,2,3,4); Message = "Expected collection '1, 2, 3, 4' with length '4', but got '3'."},
+            @{ Actual = (New-PSObject @{ Name = 'Jakub' }); Expected = (1,2,3,4); Message = "Expected collection '1, 2, 3, 4' with length '4', but got 'PSObject{Name=Jakub}'."}
+        ) {
+            param ($Actual, $Expected, $Message)
+            Compare-CollectionEquivalent -Actual $Actual -Expected $Expected | Verify-Equal $Message
+        }
+
+        It "Given two collections '<expected>' '<actual>' it compares each value with each value and returns `$null if all of them are equivalent" -TestCases @(
+            @{ Actual = (1,2,3); Expected = (1,2,3)},
+            @{ Actual = (1,2,3); Expected = (3,2,1)}
+        ) {
+            param ($Actual, $Expected)
+            Compare-CollectionEquivalent -Actual $Actual -Expected $Expected | Verify-Null
+        }
+
+        It "Given two collections '<expected>' '<actual>' it compares each value with each value and returns message '<message> if any of them are not equivalent" -TestCases @(
+            @{ Actual = (1,2,3); Expected = (4,5,6); Message = "Expected collection '4, 5, 6' to be equivalent to '1, 2, 3' but some values were missing: '4, 5, 6'."},
+            @{ Actual = (1,2,3); Expected = (1,2,2); Message = "Expected collection '1, 2, 2' to be equivalent to '1, 2, 3' but some values were missing: '2'."}
+        ) {
+            param ($Actual, $Expected, $Message)
+            Compare-CollectionEquivalent -Actual $Actual -Expected $Expected | Verify-Equal $Message
+        }
+    }
+
+    Describe "Compare-ObjectEquivalent" {
+        It "Given expected '<expected>' that is not an object it throws ArgumentException" -TestCases @(
+            @{ Expected = "a" },
+            @{ Expected = "1" },
+            @{ Expected = { abc } },
+            @{ Expected = (1,2,3) }
+        ) { 
+            param($Expected) {}
+            $err = { Compare-ObjectEquivalent -Actual "dummy" -Expected $Expected } | Verify-Throw 
+            $err.Exception -is [ArgumentException] | Verify-True
+        }
+
+        It "Given values '<expected>' and '<actual>' that are not equivalent it returns message '<message>'." -TestCases @(
+            @{ Actual = 'a'; Expected = (New-PSObject @{ Name = 'Jakub' }); Message = "Expected object 'PSObject{Name=Jakub}', but got 'a'."}
+        ) { 
+            param ($Actual, $Expected, $Message) 
+            Compare-ObjectEquivalent -Expected $Expected -Actual $Actual | Verify-Equal $Message
+        }
+    }
+
+    Describe "Compare-HashtableEquivalent" {
+        It "Given expected '<expected>' that is not a hashtable it throws ArgumentException" -TestCases @(
+            @{ Expected = "a" }
+        ) { 
+            param($Expected) {}
+            $err = { Compare-HashtableEquivalent -Actual "dummy" -Expected $Expected } | Verify-Throw 
+            $err.Exception -is [ArgumentException] | Verify-True
+        }
+
+        It "Given values '<expected>' and '<actual>' that are not equivalent it returns message '<message>'." -TestCases @(
+            @{ Actual = 'a'; Expected = @{ Name = 'Jakub' }; Message = "Expected hashtable '@{Name=Jakub}', but got 'a'." }
+            @{ Actual = @{ }; Expected = @{ Name = 'Jakub' }; Message = "Expected hashtable '@{Name=Jakub}', but got '@{}'.`nExpected has key 'Name' that the other object does not have." }
+            @{ Actual = @{ Name = 'Tomas' }; Expected = @{ Name = 'Jakub' }; Message = "Expected hashtable '@{Name=Jakub}', but got '@{Name=Tomas}'.`nExpected property .Name with value 'Jakub' to be equivalent to the actual value, but got 'Tomas'." }
+            @{ Actual = @{ Name = 'Tomas'; Value = 10 }; Expected = @{ Name = 'Jakub' }; Message = "Expected hashtable '@{Name=Jakub}', but got '@{Name=Tomas; Value=10}'.`nExpected property .Name with value 'Jakub' to be equivalent to the actual value, but got 'Tomas'.`nExpected is missing key 'Value' that the other object has." }
+        ) { 
+            param ($Actual, $Expected, $Message) 
+
+            Compare-HashtableEquivalent -Expected $Expected -Actual $Actual | Verify-Equal $Message
+        }
+    }
+
+    Describe "Compare-DictionaryEquivalent" {
+        It "Given expected '<expected>' that is not a dictionary it throws ArgumentException" -TestCases @(
+            @{ Expected = "a" }
+        ) { 
+            param($Expected) {}
+            $err = { Compare-DictionaryEquivalent -Actual "dummy" -Expected $Expected } | Verify-Throw 
+            $err.Exception -is [ArgumentException] | Verify-True
+        }
+
+        It "Given values '<expected>' and '<actual>' that are not equivalent it returns message '<message>'." -TestCases @(
+            @{ Actual = 'a'; Expected = New-Dictionary @{ Name = 'Jakub' }; Message = "Expected dictionary 'Dictionary{Name=Jakub}', but got 'a'." }
+            @{ Actual = New-Dictionary @{ }; Expected = New-Dictionary @{ Name = 'Jakub' }; Message = "Expected dictionary 'Dictionary{Name=Jakub}', but got 'Dictionary{}'.`nExpected has key 'Name' that the other object does not have." }
+            @{ Actual = New-Dictionary @{ Name = 'Tomas' }; Expected = New-Dictionary @{ Name = 'Jakub' }; Message = "Expected dictionary 'Dictionary{Name=Jakub}', but got 'Dictionary{Name=Tomas}'.`nExpected property .Name with value 'Jakub' to be equivalent to the actual value, but got 'Tomas'." }
+            @{ Actual = New-Dictionary @{ Name = 'Tomas'; Value = 10 }; Expected = New-Dictionary @{ Name = 'Jakub' }; Message = "Expected dictionary 'Dictionary{Name=Jakub}', but got 'Dictionary{Name=Tomas; Value=10}'.`nExpected property .Name with value 'Jakub' to be equivalent to the actual value, but got 'Tomas'.`nExpected is missing key 'Value' that the other object has." }
+        ) { 
+            param ($Actual, $Expected, $Message) 
+
+            Compare-DictionaryEquivalent -Expected $Expected -Actual $Actual | Verify-Equal $Message
+        }
+    }
+
+    Describe "Compare-Equivalent" { 
+        It "Given values '<expected>' and '<actual>' that are equivalent returns report with Equivalent set to `$true" -TestCases @(
+            @{ Actual = $null; Expected = $null },
+            @{ Actual = ""; Expected = "" },
+            @{ Actual = $true; Expected = $true },
+            @{ Actual = $true; Expected = 'True' },
+            @{ Actual = 'True'; Expected = $true },
+            @{ Actual = $false; Expected = 'False' },
+            @{ Actual = 'False'; Expected = $false},
+            @{ Actual = 1; Expected = 1 },
+            @{ Actual = "1"; Expected = 1 },
+            @{ Actual = "abc"; Expected = "abc" },
+            @{ Actual = @("abc"); Expected = "abc" },
+            @{ Actual = "abc"; Expected = @("abc") },
+            @{ Actual = {abc}; Expected = "abc" },
+            @{ Actual = "abc"; Expected = {abc} },
+            @{ Actual = {abc}; Expected = {abc} }
+        ) { 
+            param ($Actual, $Expected) 
+            Compare-Equivalent -Expected $Expected -Actual $Actual | Verify-Null
+        }
+
+        It "Given values '<expected>' and '<actual>' that are not equivalent it returns message '<message>'." -TestCases @(
+            @{ Actual = $null; Expected = 1; Message = "Expected '1' to be equivalent to the actual value, but got '`$null'." },
+            @{ Actual = $null; Expected = ""; Message = "Expected '' to be equivalent to the actual value, but got '`$null'." },
+            @{ Actual = $true; Expected = $false; Message = "Expected '`$false' to be equivalent to the actual value, but got '`$true'." },
+            @{ Actual = $true; Expected = 'False'; Message = "Expected '`$false' to be equivalent to the actual value, but got '`$true'." },
+            @{ Actual = 1; Expected = -1; Message = "Expected '-1' to be equivalent to the actual value, but got '1'." },
+            @{ Actual = "1"; Expected = 1.01; Message = "Expected '1.01' to be equivalent to the actual value, but got '1'." },
+            @{ Actual = "abc"; Expected = "a b c"; Message = "Expected 'a b c' to be equivalent to the actual value, but got 'abc'." },
+            @{ Actual = @("abc", "bde"); Expected = "abc"; Message = "Expected 'abc' to be equivalent to the actual value, but got 'abc, bde'." },
+            @{ Actual = {def}; Expected = "abc"; Message = "Expected 'abc' to be equivalent to the actual value, but got '{def}'." },
+            @{ Actual = "def"; Expected = {abc}; Message = "Expected '{abc}' to be equivalent to the actual value, but got 'def'." },
+            @{ Actual = {abc}; Expected = {def}; Message = "Expected '{def}' to be equivalent to the actual value, but got '{abc}'." },
+            @{ Actual = (1,2,3); Expected = (1,2,3,4); Message = "Expected collection '1, 2, 3, 4' with length '4' to be the same size as the actual collection, but got '1, 2, 3' with length '3'."},
+            @{ Actual = 3; Expected = (1,2,3,4); Message = "Expected collection '1, 2, 3, 4' with length '4', but got '3'."},
+            @{ Actual = (New-PSObject @{ Name = 'Jakub' }); Expected = (1,2,3,4); Message = "Expected collection '1, 2, 3, 4' with length '4', but got 'PSObject{Name=Jakub}'."},
+            @{ Actual = (New-PSObject @{ Name = 'Jakub' }); Expected = "a"; Message = "Expected 'a' to be equivalent to the actual value, but got 'PSObject{Name=Jakub}'." },
+            @{ Actual = 'a'; Expected = (New-PSObject @{ Name = 'Jakub' }); Message = "Expected object 'PSObject{Name=Jakub}', but got 'a'."}      
+            @{ Actual = 'a'; Expected = @{ Name = 'Jakub' }; Message = "Expected hashtable '@{Name=Jakub}', but got 'a'." }
+            @{ Actual = 'a'; Expected =  New-Dictionary @{ Name = 'Jakub' }; Message = "Expected dictionary 'Dictionary{Name=Jakub}', but got 'a'." }
+        ) { 
+            param ($Actual, $Expected, $Message) 
+            Compare-Equivalent -Expected $Expected -Actual $Actual | Verify-Equal $Message
+        }
+
+        It "Comparing the same instance of a psObject returns null"{ 
+            $actual = $expected = New-PSObject @{ Name = 'Jakub' }
+            Verify-Same -Expected $expected -Actual $actual
+
+            Compare-Equivalent -Expected $expected -Actual $actual | Verify-Null
+        }
+
+        It "Given PSObjects '<expected>' and '<actual> that are different instances but have the same values it returns report with Equivalent set to `$true" -TestCases @(
+            @{
+                Expected = New-PSObject @{ Name = 'Jakub' }
+                Actual =   New-PSObject @{ Name = 'Jakub' } 
+            },
+            @{
+                Expected = New-PSObject @{ Name = 'Jakub' } 
+                Actual =   New-PSObject @{ Name = 'Jakub' } 
+            },
+            @{
+                Expected = New-PSObject @{ Age = 28 } 
+                Actual =   New-PSObject @{ Age = '28' } 
+            }
+        ) { 
+            param ($Expected, $Actual)
+            Verify-NotSame -Expected $Expected -Actual $Actual
+            
+            Compare-Equivalent -Expected $Expected -Actual $Actual | Verify-Null
+        }
+
+        It "Given PSObjects '<expected>' and '<actual> that have different values in some of the properties it returns message '<message>'" -TestCases @(
+            @{
+                Expected = New-PSObject @{ Name = 'Jakub'; Age = 28 }
+                Actual = New-PSObject @{ Name = 'Jakub'; Age = 19 }
+                Message = "Expected property .Age with value '28' to be equivalent to the actual value, but got '19'."
+            },
+            @{
+                Expected = New-PSObject @{ Name = 'Jakub'; Age = 28 } 
+                Actual = New-PSObject @{ Name = 'Jakub'}
+                Message = "Expected has property 'Age' that the other object does not have." 
+            },
+            @{
+                Expected = New-PSObject @{ Name = 'Jakub'} 
+                Actual = New-PSObject @{ Name = 'Jakub'; Age = 28 }
+                Message = "Expected is missing property 'Age' that the other object has." 
+            }
+        ) { 
+            param ($Expected, $Actual, $Message)
+            Verify-NotSame -Expected $Expected -Actual $Actual
+
+            Compare-Equivalent -Expected $Expected -Actual $Actual | Verify-Equal $Message
+        }
+
+        It "Given PSObject '<expected>' and object '<actual> that have the same values it returns `$null" -TestCases @(
+            @{
+                Expected = New-Object -TypeName Assertions.TestType.Person -Property @{ Name = 'Jakub'; Age  = 28}
+                Actual =   New-PSObject @{ Name = 'Jakub'; Age = 28 } 
+            }
+        ) { 
+            param ($Expected, $Actual)
+            Compare-Equivalent -Expected $Expected -Actual $Actual | Verify-Null
+        }
+
+
+        It "Given PSObjects '<expected>' and '<actual> that contain different arrays in the same property returns the correct message" -TestCases @(
+            @{
+                Expected = New-PSObject @{ Numbers = 1,2,3 } 
+                Actual =   New-PSObject @{ Numbers = 3,4,5 } 
+            }
+        ) { 
+            param ($Expected, $Actual)
+
+            Compare-Equivalent -Expected $Expected -Actual $Actual | Verify-Equal "Expected collection in property .Numbers which is '1, 2, 3' to be equivalent to '3, 4, 5' but some values were missing: '1, 2'."
+        }
+
+        It "Comparing psObjects that have collections of objects returns `$null when the objects have the same value" -TestCases @(
+            @{
+                Expected = New-PSObject @{ Objects = (New-PSObject @{ Name = "Jan" }), (New-PSObject @{ Name = "Tomas" }) }
+                Actual =   New-PSObject @{ Objects = (New-PSObject @{ Name = "Tomas" }), (New-PSObject @{ Name = "Jan" }) }
+            }
+        ) { 
+            param ($Expected, $Actual)
+            Compare-Equivalent -Expected $Expected -Actual $Actual | Verify-Null
+        }
+
+        It "Comparing psObjects that have collections of objects returns the correct message when the items in the collection differ" -TestCases @(
+            @{
+                Expected = New-PSObject @{ Objects = (New-PSObject @{ Name = "Jan" }), (New-PSObject @{ Name = "Petr" }) }
+                Actual =   New-PSObject @{ Objects = (New-PSObject @{ Name = "Jan" }), (New-PSObject @{ Name = "Tomas" }) }
+            }
+        ) { 
+            param ($Expected, $Actual)
+            Compare-Equivalent -Expected $Expected -Actual $Actual | Verify-Equal "Expected collection in property .Objects which is 'PSObject{Name=Jan}, PSObject{Name=Petr}' to be equivalent to 'PSObject{Name=Jan}, PSObject{Name=Tomas}' but some values were missing: 'PSObject{Name=Petr}'."
+        }
+
+        It "Can be called with positional parameters" {
+            { Assert-Equivalent 1 2 } | Verify-AssertionFailed
+        }
+    }
+}
