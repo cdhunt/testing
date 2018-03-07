@@ -2,6 +2,8 @@ image:
 - Visual Studio 2017
 #- Ubuntu
 
+version: '0.1.{build}'
+
 build: off
 
 test_script:
