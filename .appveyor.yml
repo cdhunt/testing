@@ -1,6 +1,6 @@
 image:
 - Visual Studio 2017
-#- Ubuntu
+- Ubuntu
 
 version: '0.1.{build}'
 
