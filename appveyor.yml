@@ -1,0 +1,9 @@
+image:
+- Visual Studio 2017
+- Ubuntu
+
+build: off
+
+test_script:
+  - ps: .\tests\debug.ps1
+  - pwsh: .\tests\debug.ps1
