@@ -2,6 +2,14 @@
 
 A unit test runner for PowerShell.
 
+_Latest Build Status_
+
+[![Build status](https://ci.appveyor.com/api/projects/status/nuoyux0t0pc47m5q?svg=true)](https://ci.appveyor.com/project/cdhunt/testing)
+
+_Master Branch Status_
+
+[![Build status](https://ci.appveyor.com/api/projects/status/nuoyux0t0pc47m5q/branch/master?svg=true)](https://ci.appveyor.com/project/cdhunt/testing/branch/master)
+
 ## Why
 
 There's already [Pester](https://github.com/pester/pester) so what's the point of this?
