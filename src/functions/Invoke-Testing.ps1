@@ -57,7 +57,7 @@ function Invoke-Testing {
 
             $TestResults | Write-Host
 
-            $failCount += $TestResults.FailureCount
+            $failCount += $TestResults.FailureCount()
 
             if ($Passthru) {
                 Write-Output -InputObject $TestResults
