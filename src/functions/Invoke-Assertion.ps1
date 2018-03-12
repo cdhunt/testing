@@ -1,14 +1,14 @@
 function Invoke-Assertion ($Name, $Expected, $Actual)
 {
-    $pass = $false
+    $result = [Result]::new($Expected, $Actual)
     try {
         $null = &"Assert-$Name" -Expected $expected -Actual $actual -ErrorAction Stop
-        $result = $actual
-        $pass = $true
+        $result.Passed()
     }
     catch {
-        $result = $_.Exception.Message
+        $result.Failed()
+        $result.Message = $_.Exception.Message
     }
 
-    $this.Results += [PSCustomObject]@{Pass=$pass; Result=$result}
+    $this.AddResult($result)
 }

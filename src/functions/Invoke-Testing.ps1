@@ -40,31 +40,22 @@ function Invoke-Testing {
             $testFile = $_
             . $testFile
 
-            . $PSScriptRoot\TestResults.ps1
+            $TestResults = [Testing]::New($testFile)
+            $TestResults.StartTimer()
 
-            $TestResults.File = $testFile
-
-            $stopwatch = Measure-Command {
-                    Get-ChildItem function:\ |
-                    ForEach-Object {
-                        if ($_.Parameters.ContainsKey("t")) {
-                            if ($_.Parameters["t"].Attributes -contains "Testing") {
-                                $func = $_.Name
-                                &$func $TestResults
-                            }
-                        }
+            Get-ChildItem function:\ |
+            ForEach-Object {
+                if ($_.Parameters.ContainsKey("t")) {
+                    if ($_.Parameters["t"].Attributes -contains "Testing") {
+                        $func = $_.Name
+                        &$func $TestResults
                     }
+                }
             }
 
-            $ok = if ($TestResults.Results.pass -contains $false) {
-                $failCount += ($TestResults.Results.pass -contains $false).Count
-                $red + "FAIL"
+            $TestResults.StopTimer()
 
-            } else {
-                $green + "ok"
-            }
-
-            "{0}`t{1}`t{2:n2}s" -f $ok, $testFile, $stopwatch.TotalSeconds | Write-Host
+            $TestResults | Write-Host
 
             if ($Passthru) {
                 Write-Output -InputObject $TestResults
@@ -75,13 +66,13 @@ function Invoke-Testing {
 
     end {
         if ($Throw) {
-            if ($failCount -gt 0) {
-                Throw "$failCount tests failed."
+            if ($TestResults.FailureCount -gt 0) {
+                Throw "{0} tests failed." -f $TestResults.FailureCount
             }
         }
 
         if ($Exit) {
-            exit $failCount
+            exit $TestResults.FailureCount
         }
     }
 }
