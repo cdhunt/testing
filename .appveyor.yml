@@ -7,5 +7,5 @@ version: '0.1.{build}'
 build: off
 
 test_script:
-  - ps: .\tests\debug.ps1
-  - pwsh: .\tests\debug.ps1
+  - ps: .\demo\debug.ps1
+  - pwsh: .\demo\debug.ps1
