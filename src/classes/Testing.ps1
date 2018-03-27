@@ -43,114 +43,112 @@ class Testing {
         return "{0}`t{1}`t{2:n2}s{3}" -f $resultText, $this.File, $this.Duration.TotalSeconds, $clearAnsi
 
     }
-	All($e, $a)
-	{
-		Invoke-Assertion All $e $a
-	}
-
-	Any($e, $a)
-	{
-		Invoke-Assertion Any $e $a
-	}
-
-	Contain($e, $a)
-	{
-		Invoke-Assertion Contain $e $a
-	}
-
-	Equal($e, $a)
-	{
-		Invoke-Assertion Equal $e $a
-	}
-
-	Equivalent($e, $a)
-	{
-		Invoke-Assertion Equivalent $e $a
-	}
-
-	False($e, $a)
-	{
-		Invoke-Assertion False $e $a
-	}
-
-	GreaterThan($e, $a)
-	{
-		Invoke-Assertion GreaterThan $e $a
-	}
-
-	GreaterThanOrEqual($e, $a)
-	{
-		Invoke-Assertion GreaterThanOrEqual $e $a
-	}
-
-	LessThan($e, $a)
-	{
-		Invoke-Assertion LessThan $e $a
-	}
-
-	LessThanOrEqual($e, $a)
-	{
-		Invoke-Assertion LessThanOrEqual $e $a
-	}
-
-	Like($e, $a)
-	{
-		Invoke-Assertion Like $e $a
-	}
-
-	NotContain($e, $a)
-	{
-		Invoke-Assertion NotContain $e $a
-	}
-
-	NotEqual($e, $a)
-	{
-		Invoke-Assertion NotEqual $e $a
-	}
-
-	NotLike($e, $a)
-	{
-		Invoke-Assertion NotLike $e $a
-	}
-
-	NotNull($e, $a)
-	{
-		Invoke-Assertion NotNull $e $a
-	}
-
-	NotSame($e, $a)
-	{
-		Invoke-Assertion NotSame $e $a
-	}
-
-	NotType($e, $a)
-	{
-		Invoke-Assertion NotType $e $a
-	}
-
-	Null($e, $a)
-	{
-		Invoke-Assertion Null $e $a
-	}
-
-	Same($e, $a)
-	{
-		Invoke-Assertion Same $e $a
-	}
-
-	StringEqual($e, $a)
-	{
-		Invoke-Assertion StringEqual $e $a
-	}
-
-	StringNotEqual($e, $a)
-	{
-		Invoke-Assertion StringNotEqual $e $a
-	}
-
-	True($e, $a)
-	{
-		Invoke-Assertion True $e $a
-	}
-
+  All([Object]$a)
+  {
+      Invoke-Assertion All $a
+  }
+  Any([Object]$a)
+  {
+      Invoke-Assertion Any $a
+  }
+  Contain([Object]$e, [Object]$a)
+  {
+      Invoke-Assertion Contain $e $a
+  }
+  Equal([Object]$e, [Object]$a)
+  {
+      Invoke-Assertion Equal $e $a
+  }
+  Equivalent([Object]$e, [Object]$a)
+  {
+      Invoke-Assertion Equivalent $e $a
+  }
+  False([Object]$a)
+  {
+      Invoke-Assertion False $a
+  }
+  GreaterThan([Object]$e, [Object]$a)
+  {
+      Invoke-Assertion GreaterThan $e $a
+  }
+  GreaterThanOrEqual([Object]$e, [Object]$a)
+  {
+      Invoke-Assertion GreaterThanOrEqual $e $a
+  }
+  LessThan([Object]$e, [Object]$a)
+  {
+      Invoke-Assertion LessThan $e $a
+  }
+  LessThanOrEqual([Object]$e, [Object]$a)
+  {
+      Invoke-Assertion LessThanOrEqual $e $a
+  }
+  Like([String]$e, [Object]$a, [string[]]$v)
+  {
+      $e = $e -f $v
+      Invoke-Assertion Like $e $a
+  }
+  Like([String]$e, [Object]$a)
+  {
+      Invoke-Assertion Like $e $a
+  }
+  NotContain([Object]$e, [Object]$a)
+  {
+      Invoke-Assertion NotContain $e $a
+  }
+  NotEqual([Object]$e, [Object]$a)
+  {
+      Invoke-Assertion NotEqual $e $a
+  }
+  NotLike([String]$e, [Object]$a, [string[]]$v)
+  {
+      $e = $e -f $v
+      Invoke-Assertion NotLike $e $a
+  }
+  NotLike([String]$e, [Object]$a)
+  {
+      Invoke-Assertion NotLike $e $a
+  }
+  NotNull([Object]$a)
+  {
+      Invoke-Assertion NotNull $a
+  }
+  NotSame([Object]$e, [Object]$a)
+  {
+      Invoke-Assertion NotSame $e $a
+  }
+  NotType([Type]$e, [Object]$a)
+  {
+      Invoke-Assertion NotType $e $a
+  }
+  Null([Object]$a)
+  {
+      Invoke-Assertion Null $a
+  }
+  Same([Object]$e, [Object]$a)
+  {
+      Invoke-Assertion Same $e $a
+  }
+  StringEqual([String]$e, [Object]$a, [string[]]$v)
+  {
+      $e = $e -f $v
+      Invoke-Assertion StringEqual $e $a
+  }
+  StringEqual([String]$e, [Object]$a)
+  {
+      Invoke-Assertion StringEqual $e $a
+  }
+  StringNotEqual([String]$e, [Object]$a, [string[]]$v)
+  {
+      $e = $e -f $v
+      Invoke-Assertion StringNotEqual $e $a
+  }
+  StringNotEqual([String]$e, [Object]$a)
+  {
+      Invoke-Assertion StringNotEqual $e $a
+  }
+  True([Object]$a)
+  {
+      Invoke-Assertion True $a
+  }
 }

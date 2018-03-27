@@ -51,9 +51,33 @@ class Testing {
 Get-Command -Module Assert -Verb Assert | % {
     $noun = $_.Noun
     if ($noun -ne 'Throw' -and $noun -ne 'Type') {
-        $testThis += "`t" + $noun + '($e, $a)'
 
-        $testThis += "`t{`n`t`tInvoke-Assertion " + $noun + ' $e $a' + "`n`t}`n"
+        $expectedParamType = $_.Parameters["Expected"].ParameterType.Name
+        $actualParamType = $_.Parameters["Actual"].ParameterType.Name
+
+        if ($_.Parameters.ContainsKey("Expected")) {
+
+            if ($expectedParamType -eq 'String') {
+
+                $testThis += '  {0}([{1}]$e, [{2}]$a, [string[]]$v)' -f $noun, $expectedParamType, $actualParamType
+                $testThis += '  {'
+                $testThis += '      $e = $e -f $v'
+                $testThis += '      Invoke-Assertion {0} $e $a' -f $noun
+                $testThis += '  }'
+            }
+
+            $testThis += '  {0}([{1}]$e, [{2}]$a)' -f $noun, $expectedParamType, $actualParamType
+            $testThis += '  {'
+            $testThis += '      Invoke-Assertion {0} $e $a' -f $noun
+            $testThis += '  }'
+
+        }
+        else {
+            $testThis += '  {0}([{1}]$a)' -f $noun, $actualParamType
+            $testThis += '  {'
+            $testThis += '      Invoke-Assertion {0} $a' -f $noun
+            $testThis += '  }'
+        }
     }
 }
 
